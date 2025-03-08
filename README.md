@@ -89,7 +89,8 @@ function CustomDateInput() {
   
   const { inputProps } = useTypedDate({
     value: date,
-    onChange: setDate
+    onChange: setDate,
+    format: "MM/DD/YYYY"
   });
 
   return (
@@ -112,7 +113,6 @@ function CustomDateInput() {
 2. Type numbers to replace the segment value
 3. Use arrow keys to navigate between segments (← →) 
 4. Use up/down arrows (↑ ↓) to increment/decrement values
-5. Press "/" to jump to the next segment
 
 ## API Reference
 
@@ -121,16 +121,18 @@ function CustomDateInput() {
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `value` | `Date \| undefined` | `undefined` | Selected date value |
-| `onChange` | `(date: Date \| undefined) => void` | `undefined` | Callback when date changes |
+| `onChange` | `(date: Date) => void` | `undefined` | Callback when date changes |
+| `format` | `string` | `MM/DD/YYYY` | Format using MM, DD, YYYY with custom seperator |
 | `className` | `string` | `undefined` | CSS class for styling |
-| `...props` | `InputHTMLAttributes<HTMLInputElement>` | | Any other valid input props except `type`, `onMouseUp`, `onKeyDown`, `ref` |
+| `...props` | `InputHTMLAttributes<HTMLInputElement>` | | Any other valid input props except `type`, `onMouseUp`, `onKeyDown`, `ref`, `onBlur`, `onFocus` |
 
 ### useTypedDate Hook
 
 ```typescript
 function useDateField(options: {
   value?: Date;
-  onChange?: (date: Date | undefined) => void;
+  onChange?: (date: Date) => void;
+  format?: string;
 }): {
   inputProps: {
     ref: React.RefObject<HTMLInputElement>;
@@ -139,6 +141,8 @@ function useDateField(options: {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     onMouseUp: (e: React.MouseEvent<HTMLInputElement>) => void;
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => void,
+    onFocus: (e: React.FocusEvent<HTMLInputElement>) => void,
   };
 }
 ```
@@ -153,7 +157,6 @@ You can also just use your own `input` component.
 
 The following features are planned for future releases:
 
-- **Custom date formats**: Support for different date formats beyond MM/DD/YYYY
 - **Date library integration**: Support for popular date libraries like date-fns, Day.js, and Moment.js
 - **Localization**: International date formats and localized month/day names
 - **Time picker**: Add support for time input alongside date
