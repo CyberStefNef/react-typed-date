@@ -68,5 +68,8 @@
     "commitizen": {
       "path": "@commitlint/cz-commitlint"
     }
+  },
+  "publishConfig": {
+    "provenance": true
   }
 }
