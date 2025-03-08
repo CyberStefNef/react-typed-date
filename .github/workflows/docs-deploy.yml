@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'docs/**'
+  workflow_dispatch:
 
 defaults:
   run:
@@ -32,7 +33,7 @@ jobs:
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: build
+          path: docs/build
 
   deploy:
     name: Deploy to GitHub Pages
