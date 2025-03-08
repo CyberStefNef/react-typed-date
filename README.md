@@ -1,7 +1,7 @@
 # react-typed-date
 
 ![npm version](https://img.shields.io/npm/v/react-typed-date)
-![license](https://img.shields.io/npm/l/react-typed-date)
+![license](https://img.shields.io/badge/license-MIT-green)
 ![bundle size](https://img.shields.io/bundlephobia/minzip/react-typed-date)
 
 A React library for creating an intuitive, keyboard-friendly date input field with segment navigation.
