@@ -15,7 +15,8 @@ function CustomDateInput() {
   
   const { inputProps } = useTypedDate({
     value: date,
-    onChange: setDate
+    onChange: setDate,
+    format: "MM/DD/YYYY"
   });
 
   return (
