@@ -1,47 +1,42 @@
 ---
+id: intro
+title: Introduction
+slug: /
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+# react-typed-date
 
-Let's discover **Docusaurus in less than 5 minutes**.
+![npm version](https://img.shields.io/npm/v/react-typed-date)
+![license](https://img.shields.io/badge/license-MIT-green)
+![bundle size](https://img.shields.io/bundlephobia/minzip/react-typed-date)
 
-## Getting Started
+A React library for creating an intuitive, keyboard-friendly date input field with segment navigation.
 
-Get started by **creating a new site**.
+## Motivation
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+`react-typed-date` provides a lightweight date input experience inspired by [React ARIA DateField](https://react-spectrum.adobe.com/react-aria/DateField.html), offering the same intuitive keyboard navigation and segment editing in a zero-dependency package.
 
-### What you'll need
+## Features
 
-- [Node.js](https://nodejs.org/en/download/) version 18.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+- 🎯 Intuitive keyboard navigation between date segments (month/day/year)
+- 🚦 Smart date validation with awareness of month lengths and leap years
+- ⌨️ Proper keyboard interaction with arrow keys for quick date adjustments
+- 🎨 Easily stylable with your preferred CSS solution
+- 📦 TypeScript support with full type definitions
+- 🧩 Zero dependencies
 
-## Generate a new site
+## Alternatives
 
-Generate a new Docusaurus site using the **classic template**.
+Note that `react-typed-date` is specifically designed as a date input field with segment navigation, not a date picker with a popup calendar. If you need a full calendar picker component, consider libraries like [react-day-picker](https://react-day-picker.js.org/) alongside this library.
 
-The classic template will automatically be added to your project after you run the command:
+Before choosing this library, consider exploring these alternatives. As `react-typed-date` is a hobby project, these alternatives might offer more extensive feature sets:
 
-```bash
-npm init docusaurus@latest my-website classic
-```
+- [React Aria DateField](https://react-spectrum.adobe.com/react-aria/DateField.html) - Adobe's accessible implementation with comprehensive keyboard support and robust accessibility features, though it requires additional dependencies
+- [MUI X Date Field](https://mui.com/x/react-date-pickers/date-field) - Material UI's polished implementation offering strong validation and formatting capabilities, but closely integrated with MUI's design system
+- [RSuite DateInput](https://rsuitejs.com/components/date-input/) - Clean, well-documented implementation within the RSuite component ecosystem
+- [Hero UI](https://www.heroui.com/docs/components/date-input) - Newer component library built on React Aria's foundation with consistent design patterns
+- [React Date Picker](https://projects.wojtekmaj.pl/react-date-picker/) - Established library offering both segmented input and calendar functionality in one package
+- [Native Date Input](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/date) - Browser's built-in implementation requiring no dependencies, but with limited styling options and inconsistent cross-browser behavior
 
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
-
-The command also installs all necessary dependencies you need to run Docusaurus.
-
-## Start your site
-
-Run the development server:
-
-```bash
-cd my-website
-npm run start
-```
-
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
-
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
-
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+Each alternative presents different tradeoffs regarding bundle size, styling flexibility, and dependencies. What sets `react-typed-date` apart is its focus on providing core functionality with zero dependencies while offering complete styling freedom.

@@ -6,6 +6,10 @@
 
 A React library for creating an intuitive, keyboard-friendly date input field with segment navigation.
 
+## Documentation and Live Demo
+
+For a live demo, detailed documentation, and examples on how to use `react-typed-date`, visit the [official documentation page](https://cyberstefnef.github.io/react-typed-date/).
+
 ## Motivation
 
 While there are several approaches to date input in React, each with their own strengths:
@@ -55,7 +59,7 @@ pnpm add react-typed-date
 ## Basic Usage
 
 ```jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { TypedDateInput } from 'react-typed-date';
 
 function App() {
@@ -63,12 +67,9 @@ function App() {
 
   return (
     <div className="App">
-      <label htmlFor="birthday">Date of Birth:</label>
       <TypedDateInput
-        id="birthday"
         value={date} 
         onChange={setDate}
-        className="date-input" 
       />
     </div>
   );
@@ -80,7 +81,7 @@ function App() {
 Use the hook directly for more control and custom UI:
 
 ```jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTypedDate } from 'react-typed-date';
 
 function CustomDateInput() {
@@ -144,27 +145,9 @@ function useDateField(options: {
 
 ## Styling
 
-The component accepts a `className` prop for styling. You can use any CSS-in-JS library, utility classes like Tailwind, or plain CSS.
+The component accepts a `className` prop for styling. You can use any CSS-in-JS library, utility classes like Tailwind, or plain CSS. 
 
-Basic CSS example:
-
-```css
-.date-input {
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 16px;
-  width: 140px;
-  text-align: center;
-}
-
-.date-input:focus {
-  outline: none;
-  border-color: #0066ff;
-  box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.2);
-}
-```
+You can also just use your own `input` component.
 
 ## Roadmap
 

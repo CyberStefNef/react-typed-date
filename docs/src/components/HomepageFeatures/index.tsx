@@ -1,62 +1,166 @@
-import type {ReactNode} from 'react';
-import clsx from 'clsx';
-import Heading from '@theme/Heading';
-import styles from './styles.module.css';
+import React, { useEffect, useRef, useState } from "react";
+import clsx from "clsx";
+import Heading from "@theme/Heading";
+import styles from "./styles.module.css";
+import { TypedDateInput } from "react-typed-date";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/style.css";
+import CodeBlock from "@theme/CodeBlock";
 
 type FeatureItem = {
   title: string;
-  Svg: React.ComponentType<React.ComponentProps<'svg'>>;
-  description: ReactNode;
+  description: React.ReactNode;
+  code?: string;
 };
 
-const FeatureList: FeatureItem[] = [
-  {
-    title: 'Easy to Use',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
-    description: (
-      <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
-      </>
-    ),
-  },
-  {
-    title: 'Focus on What Matters',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
-    description: (
-      <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
-      </>
-    ),
-  },
-  {
-    title: 'Powered by React',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
-    description: (
-      <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
-      </>
-    ),
-  },
-];
+function Feature({ title, description, code }: FeatureItem) {
+  const [showCode, setShowCode] = useState(false);
 
-function Feature({title, Svg, description}: FeatureItem) {
   return (
-    <div className={clsx('col col--4')}>
-      <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
-      </div>
+    <div className={clsx("col col--4", styles.feature)}>
       <div className="text--center padding-horiz--md">
         <Heading as="h3">{title}</Heading>
-        <p>{description}</p>
+        <div className={styles.featureContent}>{description}</div>
+        {code && (
+          <div className={styles.codeSection}>
+            <button
+              className={styles.showCodeButton}
+              onClick={() => setShowCode(!showCode)}
+            >
+              {showCode ? "Hide Code" : "Show Code"}
+            </button>
+            {showCode && (
+              <div className={styles.codeBlock}>
+                <CodeBlock language="tsx">{code}</CodeBlock>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-export default function HomepageFeatures(): ReactNode {
+const Popover = ({ children, content }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const popoverRef = useRef(null);
+  const triggerRef = useRef(null);
+
+  const toggleVisibility = () => {
+    setIsVisible(!isVisible);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        popoverRef.current &&
+        !popoverRef.current.contains(event.target) &&
+        !triggerRef.current.contains(event.target)
+      ) {
+        setIsVisible(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  return (
+    <div style={{ position: "relative", display: "inline-block" }}>
+      <button
+        ref={triggerRef}
+        onClick={toggleVisibility}
+        className={styles.popoverTrigger}
+        aria-haspopup="true"
+        aria-expanded={isVisible}
+        aria-controls="popover-content"
+      >
+        {children}
+      </button>
+      {isVisible && (
+        <div
+          id="popover-content"
+          ref={popoverRef}
+          role="dialog"
+          aria-modal="true"
+          className={styles.popoverContent}
+        >
+          {content}
+        </div>
+      )}
+    </div>
+  );
+};
+
+function ReactDayPickerPopover({ date, setDate }): React.ReactNode {
+  return (
+    <Popover
+      content={<DayPicker mode="single" selected={date} onSelect={setDate} />}
+    >
+      📆
+    </Popover>
+  );
+}
+
+export default function HomepageFeatures(): React.ReactNode {
+  const [date, setDate] = useState(new Date());
+
+  const FeatureList: FeatureItem[] = [
+    {
+      title: "Native (No Styling)",
+      description: (
+        <TypedDateInput
+          id="date-no-styling"
+          value={date}
+          onChange={setDate}
+          className="unstyled-input"
+        />
+      ),
+      code: `<TypedDateInput
+  id="date-no-styling"
+  value={date}
+  onChange={setDate}
+  className="unstyled-input"
+/>`,
+    },
+    {
+      title: "Custom CSS",
+      description: (
+        <TypedDateInput
+          id="date-custom-css"
+          value={date}
+          onChange={setDate}
+          className={styles.dateCustomCss}
+        />
+      ),
+      code: `<TypedDateInput
+  id="date-custom-css"
+  value={date}
+  onChange={setDate}
+  className={styles.dateCustomCss}
+/>`,
+    },
+    {
+      title: "Tailwind CSS",
+      description: (
+        <TypedDateInput
+          id="date-tailwind"
+          value={date}
+          onChange={setDate}
+          className="px-2 py-2 border border-gray-300 rounded-md w-40 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+        />
+      ),
+      code: `<TypedDateInput
+  id="date-tailwind"
+  value={date}
+  onChange={setDate}
+  className="px-2 py-2 border border-gray-300 rounded-md w-40 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+/>`,
+    },
+  ];
+
   return (
     <section className={styles.features}>
       <div className="container">
@@ -65,6 +169,35 @@ export default function HomepageFeatures(): ReactNode {
             <Feature key={idx} {...props} />
           ))}
         </div>
+
+        <div className={styles.divider}>
+          <Heading as="h2" className={styles.sectionTitle}>
+            Integration Examples
+          </Heading>
+          <p className={styles.sectionDescription}>
+            Use TypedDateInput in combination with other libraries which
+            implement a calendar picker
+          </p>
+        </div>
+
+        <div className={clsx("row", styles.centeredRow)}>
+          <div className={clsx("col col--10", styles.centeredFeature)}>
+            <Feature
+              title="+ React Day Picker"
+              description={
+                <div className={styles.dayPickerExample}>
+                  <TypedDateInput
+                    value={date}
+                    onChange={setDate}
+                    className={styles.dateInput}
+                  />
+                  <ReactDayPickerPopover date={date} setDate={setDate} />
+                </div>
+              }
+            />
+          </div>
+        </div>
+        <div style={{ height: "350px" }} />
       </div>
     </section>
   );
