@@ -9,7 +9,14 @@ export function TypedDateInput({
   ...props
 }: Omit<
   React.ComponentProps<"input">,
-  "value" | "onChange" | "onKeyDown" | "ref" | "type" | "onMouseUp"
+  | "value"
+  | "onChange"
+  | "onKeyDown"
+  | "ref"
+  | "type"
+  | "onMouseUp"
+  | "onBlur"
+  | "onFocus"
 > &
   TypedDateProps) {
   const { inputProps } = useTypedDate({

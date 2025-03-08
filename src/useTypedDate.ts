@@ -2,7 +2,11 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getMaxDaysInMonth, isValidDate, pad } from "./utils";
 import { TypedDateProps, SegmentPosition } from "./types";
 
-export function useTypedDate({ value, onChange }: TypedDateProps) {
+export function useTypedDate({
+  value,
+  onChange,
+  format = "MM/DD/YYYY",
+}: TypedDateProps) {
   const [month, setMonth] = useState<number | null>(
     value ? value.getMonth() + 1 : null,
   );
@@ -24,18 +28,48 @@ export function useTypedDate({ value, onChange }: TypedDateProps) {
   const yearBufferRef = useRef<string>("");
   const isUpdatingFromExternal = useRef(false);
 
-  const segmentOrder = ["month", "day", "year"] as const;
+  const formatData = useMemo(() => {
+    const separator = format.match(/[^A-Za-z]/)?.[0] || "/";
 
-  const segmentPositions = useMemo<SegmentPosition[]>(
-    () => [
-      { start: 0, end: 2 },
-      { start: 3, end: 5 },
-      { start: 6, end: 10 },
-    ],
-    [],
+    const segments = format.split(/[^A-Za-z]/);
+
+    const segmentOrder = segments.map((seg) => {
+      if (seg.startsWith("M")) return "month";
+      if (seg.startsWith("D")) return "day";
+      if (seg.startsWith("Y")) return "year";
+      return "month";
+    }) as Array<"month" | "day" | "year">;
+
+    return { separator, segmentOrder };
+  }, [format]);
+
+  const { separator, segmentOrder } = formatData;
+
+  const segmentPositions = useMemo<SegmentPosition[]>(() => {
+    const positions: SegmentPosition[] = [];
+    let currentPosition = 0;
+
+    segmentOrder.forEach((segment, index) => {
+      const segmentLength = segment === "year" ? 4 : 2;
+      positions.push({
+        start: currentPosition,
+        end: currentPosition + segmentLength,
+      });
+
+      if (index < segmentOrder.length - 1) {
+        currentPosition += segmentLength + separator.length;
+      } else {
+        currentPosition += segmentLength;
+      }
+    });
+
+    return positions;
+  }, [segmentOrder, separator]);
+
+  const maxLengths = useMemo(
+    () => segmentOrder.map((type) => (type === "year" ? 4 : 2)),
+    [segmentOrder],
   );
-
-  const maxLengths = [2, 2, 4];
 
   useEffect(() => {
     if (isUpdatingFromExternal.current) return;
@@ -141,7 +175,9 @@ export function useTypedDate({ value, onChange }: TypedDateProps) {
     return pad(getSegmentValue(segmentType), maxLen);
   };
 
-  const formattedValue = `${getSegmentDisplay(0)}/${getSegmentDisplay(1)}/${getSegmentDisplay(2)}`;
+  const formattedValue = segmentOrder
+    .map((_, index) => getSegmentDisplay(index))
+    .join(separator);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -179,8 +215,28 @@ export function useTypedDate({ value, onChange }: TypedDateProps) {
     }
   };
 
+  const tabKeyPressedRef = useRef(false);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const key = e.key;
+
+    if (key === "Tab") {
+      tabKeyPressedRef.current = true;
+
+      if (e.shiftKey && activeSegment > 0) {
+        e.preventDefault();
+        setBuffer("");
+        setActiveSegment((prev) => prev - 1);
+        return;
+      } else if (!e.shiftKey && activeSegment < segmentPositions.length - 1) {
+        e.preventDefault();
+        setBuffer("");
+        setActiveSegment((prev) => prev + 1);
+        return;
+      }
+      setBuffer("");
+      return;
+    }
 
     if (key === "ArrowLeft") {
       e.preventDefault();
@@ -188,7 +244,8 @@ export function useTypedDate({ value, onChange }: TypedDateProps) {
       setActiveSegment((prev) => (prev > 0 ? prev - 1 : 0));
       return;
     }
-    if (key === "ArrowRight" || key === "/") {
+
+    if (key === "ArrowRight") {
       e.preventDefault();
       setBuffer("");
       setActiveSegment((prev) =>
@@ -198,6 +255,7 @@ export function useTypedDate({ value, onChange }: TypedDateProps) {
       );
       return;
     }
+
     if (key === "ArrowUp" || key === "ArrowDown") {
       e.preventDefault();
       setBuffer("");
@@ -215,7 +273,9 @@ export function useTypedDate({ value, onChange }: TypedDateProps) {
           key === "ArrowUp"
             ? Math.min(monthVal + 1, 12)
             : Math.max(monthVal - 1, 1);
-        updateDatePart("month", newMonth);
+        if (newMonth !== monthVal) {
+          updateDatePart("month", newMonth);
+        }
       } else if (segmentType === "day") {
         const dayVal = currentDay ?? 0;
         const maxDay =
@@ -226,14 +286,18 @@ export function useTypedDate({ value, onChange }: TypedDateProps) {
           key === "ArrowUp"
             ? Math.min(dayVal + 1, maxDay)
             : Math.max(dayVal - 1, 1);
-        updateDatePart("day", newDay);
+        if (newDay !== dayVal) {
+          updateDatePart("day", newDay);
+        }
       } else if (segmentType === "year") {
         const yearVal = currentYear ?? 0;
         const newYear =
           key === "ArrowUp"
             ? Math.min(yearVal + 1, 9999)
             : Math.max(yearVal - 1, 1000);
-        updateDatePart("year", newYear);
+        if (newYear !== yearVal) {
+          updateDatePart("year", newYear);
+        }
       }
       return;
     }
@@ -283,6 +347,60 @@ export function useTypedDate({ value, onChange }: TypedDateProps) {
     e.preventDefault();
   };
 
+  const handleFocus = () => {
+    if (tabKeyPressedRef.current) {
+      tabKeyPressedRef.current = false;
+
+      setActiveSegment(0);
+      setBuffer("");
+
+      const { start, end } = segmentPositions[0];
+      setTimeout(() => {
+        inputRef.current?.setSelectionRange(start, end);
+      }, 0);
+    }
+  };
+
+  useEffect(() => {
+    const handleDocumentKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Tab") {
+        tabKeyPressedRef.current = true;
+
+        setTimeout(() => {
+          tabKeyPressedRef.current = false;
+        }, 100);
+      }
+    };
+
+    document.addEventListener("keydown", handleDocumentKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleDocumentKeyDown);
+    };
+  }, []);
+
+  const handleBlur = () => {
+    if (buffer) {
+      const segmentType = segmentOrder[activeSegment];
+      const parsed = parseInt(buffer, 10);
+
+      if (segmentType === "month") {
+        updateDatePart("month", Math.min(parsed, 12));
+      } else if (segmentType === "day") {
+        const { month: currentMonth, year: currentYear } =
+          internalStateRef.current;
+        const maxDay =
+          currentMonth !== null && currentYear !== null
+            ? getMaxDaysInMonth(currentMonth, currentYear)
+            : 31;
+        updateDatePart("day", Math.min(parsed, maxDay));
+      } else if (segmentType === "year") {
+        updateDatePart("year", parsed);
+      }
+
+      setBuffer("");
+    }
+  };
+
   return {
     inputProps: {
       ref: inputRef,
@@ -291,6 +409,8 @@ export function useTypedDate({ value, onChange }: TypedDateProps) {
       onChange: handleChange,
       onKeyDown: handleKeyDown,
       onMouseUp: handleMouseUp,
+      onBlur: handleBlur,
+      onFocus: handleFocus,
     },
   };
 }
