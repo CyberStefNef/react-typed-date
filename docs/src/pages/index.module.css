@@ -19,7 +19,6 @@
 
 .introduction {
   padding: 3rem 0;
-  background-color: #f7f7f7;
   text-align: center;
 }
 
@@ -29,6 +28,5 @@
 
 .sectionDescription {
   font-size: 1.1rem;
-  color: #555;
   line-height: 1.6;
 }

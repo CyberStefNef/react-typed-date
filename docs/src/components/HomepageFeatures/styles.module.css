@@ -32,28 +32,6 @@
   box-shadow: 0 0 0 3px rgba(53, 120, 229, 0.3);
 }
 
-.showCodeButton {
-  background-color: #f5f6f7;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-top: 1rem;
-}
-
-.showCodeButton:hover {
-  background-color: #e6e6e6;
-}
-
-.codeBlock {
-  margin-top: 1rem;
-  border-radius: 6px;
-  overflow: hidden;
-  text-align: left;
-}
-
 .divider {
   margin: 3rem 0;
   text-align: center;
@@ -65,7 +43,6 @@
 
 .sectionDescription {
   font-size: 1.1rem;
-  color: #555;
   max-width: 600px;
   margin: 0 auto 2rem;
 }
@@ -85,7 +62,7 @@
   left: 50%;
   transform: translateX(-50%);
   margin-top: 10px;
-  background-color: white;
+  background-color: var(--ifm-background-color);
   border: 1px solid #ccc;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   border-radius: 4px;

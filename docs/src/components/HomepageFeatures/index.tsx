@@ -5,7 +5,6 @@ import styles from "./styles.module.css";
 import { TypedDateInput } from "react-typed-date";
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/style.css";
-import CodeBlock from "@theme/CodeBlock";
 
 type FeatureItem = {
   title: string;
@@ -13,29 +12,12 @@ type FeatureItem = {
   code?: string;
 };
 
-function Feature({ title, description, code }: FeatureItem) {
-  const [showCode, setShowCode] = useState(false);
-
+function Feature({ title, description }: FeatureItem) {
   return (
     <div className={clsx("col col--4", styles.feature)}>
       <div className="text--center padding-horiz--md">
         <Heading as="h3">{title}</Heading>
         <div className={styles.featureContent}>{description}</div>
-        {code && (
-          <div className={styles.codeSection}>
-            <button
-              className={styles.showCodeButton}
-              onClick={() => setShowCode(!showCode)}
-            >
-              {showCode ? "Hide Code" : "Show Code"}
-            </button>
-            {showCode && (
-              <div className={styles.codeBlock}>
-                <CodeBlock language="tsx">{code}</CodeBlock>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -118,12 +100,6 @@ export default function HomepageFeatures(): React.ReactNode {
           className="unstyled-input"
         />
       ),
-      code: `<TypedDateInput
-  id="date-no-styling"
-  value={date}
-  onChange={setDate}
-  className="unstyled-input"
-/>`,
     },
     {
       title: "Custom CSS",
@@ -135,12 +111,6 @@ export default function HomepageFeatures(): React.ReactNode {
           className={styles.dateCustomCss}
         />
       ),
-      code: `<TypedDateInput
-  id="date-custom-css"
-  value={date}
-  onChange={setDate}
-  className={styles.dateCustomCss}
-/>`,
     },
     {
       title: "Tailwind CSS",
@@ -152,12 +122,6 @@ export default function HomepageFeatures(): React.ReactNode {
           className="px-2 py-2 border border-gray-300 rounded-md w-40 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
         />
       ),
-      code: `<TypedDateInput
-  id="date-tailwind"
-  value={date}
-  onChange={setDate}
-  className="px-2 py-2 border border-gray-300 rounded-md w-40 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-/>`,
     },
   ];
 
