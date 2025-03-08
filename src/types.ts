@@ -1,6 +1,7 @@
 export interface TypedDateProps {
   value?: Date;
-  onChange?: (date: Date | undefined) => void;
+  onChange?: (date?: Date) => void;
+  format?: string;
 }
 
 export interface SegmentPosition {
