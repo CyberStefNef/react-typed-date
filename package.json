@@ -11,12 +11,12 @@
     ".": "./dist/index.js"
   },
   "scripts": {
-    "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
     "prepare": "husky",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "test": "vitest",
+    "test:headless": "vitest run --browser.headless"
   },
   "keywords": [
     "react",
@@ -50,19 +50,23 @@
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react-swc": "^3.8.0",
+    "@vitest/browser": "^3.0.8",
     "commitizen": "^4.3.1",
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^15.15.0",
     "husky": "^9.1.7",
+    "playwright": "^1.51.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "semantic-release": "^24.2.3",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
     "vite": "^6.2.0",
-    "vite-plugin-dts": "^4.5.3"
+    "vite-plugin-dts": "^4.5.3",
+    "vitest": "^3.0.8",
+    "vitest-browser-react": "^0.1.1"
   },
   "config": {
     "commitizen": {

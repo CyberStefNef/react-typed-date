@@ -1,18 +1,24 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { getMaxDaysInMonth, isValidDate, pad } from "./utils";
-import { TypedDateProps, SegmentPosition } from "./types";
+import { TypedDateProps, SegmentPosition, SegmentState } from "./types";
 
 export function useTypedDate({
   value,
   onChange,
   format = "MM/DD/YYYY",
 }: TypedDateProps) {
-  const [month, setMonth] = useState<number | null>(
-    value ? value.getMonth() + 1 : null,
-  );
-  const [day, setDay] = useState<number | null>(value ? value.getDate() : null);
-  const [year, setYear] = useState<number | null>(
-    value ? value.getFullYear() : null,
+  const [state, setState] = useState<SegmentState>(
+    value
+      ? {
+          year: value.getFullYear(),
+          month: value.getMonth() + 1,
+          day: value.getDate(),
+        }
+      : {
+          year: null,
+          month: null,
+          day: null,
+        },
   );
 
   const [activeSegment, setActiveSegment] = useState(0);
@@ -86,9 +92,11 @@ export function useTypedDate({
       year: newYear,
     };
 
-    setMonth(newMonth);
-    setDay(newDay);
-    setYear(newYear);
+    setState({
+      year: newYear,
+      month: newMonth,
+      day: newDay,
+    });
 
     isUpdatingFromExternal.current = false;
   }, [value]);
@@ -116,16 +124,16 @@ export function useTypedDate({
         year: validYear,
       };
 
-      setMonth(validMonth);
-      setDay(validDay);
-      setYear(validYear);
+      setState({
+        year: validYear,
+        month: validMonth,
+        day: validDay,
+      });
 
       if (validMonth !== null && validDay !== null && validYear !== null) {
         if (validYear >= 1000 && isValidDate(validYear, validMonth, validDay)) {
           onChange?.(new Date(validYear, validMonth - 1, validDay));
         }
-      } else {
-        onChange?.(undefined);
       }
     },
     [onChange],
@@ -159,9 +167,9 @@ export function useTypedDate({
   );
 
   const getSegmentValue = (segmentType: "month" | "day" | "year") => {
-    if (segmentType === "month") return month;
-    if (segmentType === "day") return day;
-    return year;
+    if (segmentType === "month") return state.month;
+    if (segmentType === "day") return state.day;
+    return state.year;
   };
 
   const getSegmentDisplay = (segIndex: number) => {
