@@ -27,6 +27,14 @@
   transition: all 0.2s ease;
 }
 
+.dateCustomCss[value*=" "] {
+  width: 190px;
+}
+
+.dateCustomCss[value*=":"] {
+  width: 220px;
+}
+
 .dateCustomCss:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(53, 120, 229, 0.3);
@@ -68,4 +76,26 @@
   border-radius: 4px;
   padding: 15px;
   z-index: 1000;
+}
+
+.formatExample {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.5rem;
+  font-weight: bold;
+}
+
+.timeFeatures {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.timeFeatures > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }

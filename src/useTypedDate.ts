@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { getMaxDaysInMonth, isValidDate, pad } from "./utils";
+import { getMaxDaysInMonth, isValidDate, isValidTime, pad } from "./utils";
 import { TypedDateProps, SegmentPosition, SegmentState } from "./types";
 
 export function useTypedDate({
@@ -13,11 +13,17 @@ export function useTypedDate({
           year: value.getFullYear(),
           month: value.getMonth() + 1,
           day: value.getDate(),
+          hour: value.getHours(),
+          minute: value.getMinutes(),
+          second: value.getSeconds(),
         }
       : {
           year: null,
           month: null,
           day: null,
+          hour: null,
+          minute: null,
+          second: null,
         },
   );
 
@@ -29,27 +35,44 @@ export function useTypedDate({
     month: value ? value.getMonth() + 1 : null,
     day: value ? value.getDate() : null,
     year: value ? value.getFullYear() : null,
+    hour: value ? value.getHours() : null,
+    minute: value ? value.getMinutes() : null,
+    second: value ? value.getSeconds() : null,
   });
 
   const yearBufferRef = useRef<string>("");
   const isUpdatingFromExternal = useRef(false);
 
   const formatData = useMemo(() => {
-    const separator = format.match(/[^A-Za-z]/)?.[0] || "/";
+    const parts = format.split(/[\s]+/);
+    const datePart = parts[0] || format;
+    const timePart = parts[1];
+    
+    const dateSeparator = datePart.match(/[^A-Za-z]/)?.[0] || "/";
+    const timeSeparator = timePart?.match(/[^A-Za-z]/)?.[0] || ":";
 
-    const segments = format.split(/[^A-Za-z]/);
+    const dateSegments = datePart.split(/[^A-Za-z]/);
+    const timeSegments = timePart ? timePart.split(/[^A-Za-z]/) : [];
 
-    const segmentOrder = segments.map((seg) => {
-      if (seg.startsWith("M")) return "month";
-      if (seg.startsWith("D")) return "day";
-      if (seg.startsWith("Y")) return "year";
-      return "month";
-    }) as Array<"month" | "day" | "year">;
+    const segmentOrder = [
+      ...dateSegments.map((seg) => {
+        if (seg.startsWith("M")) return "month";
+        if (seg.startsWith("D")) return "day";
+        if (seg.startsWith("Y")) return "year";
+        return "month";
+      }),
+      ...timeSegments.map((seg) => {
+        if (seg.startsWith("H") || seg.startsWith("h")) return "hour";
+        if (seg.startsWith("m")) return "minute";
+        if (seg.startsWith("s")) return "second";
+        return "hour";
+      }),
+    ] as Array<"month" | "day" | "year" | "hour" | "minute">;
 
-    return { separator, segmentOrder };
+    return { dateSeparator, timeSeparator, segmentOrder, hasTime: timeSegments.length > 0 };
   }, [format]);
 
-  const { separator, segmentOrder } = formatData;
+  const { dateSeparator, timeSeparator, segmentOrder, hasTime } = formatData;
 
   const segmentPositions = useMemo<SegmentPosition[]>(() => {
     const positions: SegmentPosition[] = [];
@@ -63,17 +86,27 @@ export function useTypedDate({
       });
 
       if (index < segmentOrder.length - 1) {
-        currentPosition += segmentLength + separator.length;
+        const nextSegment = segmentOrder[index + 1];
+        const currentIsTime = segment === "hour" || segment === "minute";
+        const nextIsTime = nextSegment === "hour" || nextSegment === "minute";
+        
+        if (!currentIsTime && nextIsTime) {
+          currentPosition += segmentLength + 1;
+        } else if (currentIsTime && nextIsTime) {
+          currentPosition += segmentLength + timeSeparator.length;
+        } else {
+          currentPosition += segmentLength + dateSeparator.length;
+        }
       } else {
         currentPosition += segmentLength;
       }
     });
 
     return positions;
-  }, [segmentOrder, separator]);
+  }, [segmentOrder, dateSeparator, timeSeparator]);
 
   const maxLengths = useMemo(
-    () => segmentOrder.map((type) => (type === "year" ? 4 : 2)),
+    () => segmentOrder.map((type: string) => (type === "year" ? 4 : 2)),
     [segmentOrder],
   );
 
@@ -85,17 +118,26 @@ export function useTypedDate({
     const newMonth = value ? value.getMonth() + 1 : null;
     const newDay = value ? value.getDate() : null;
     const newYear = value ? value.getFullYear() : null;
+    const newHour = value ? value.getHours() : null;
+    const newMinute = value ? value.getMinutes() : null;
+    const newSecond = value ? value.getSeconds() : null;
 
     internalStateRef.current = {
       month: newMonth,
       day: newDay,
       year: newYear,
+      hour: newHour,
+      minute: newMinute,
+      second: newSecond,
     };
 
     setState({
       year: newYear,
       month: newMonth,
       day: newDay,
+      hour: newHour,
+      minute: newMinute,
+      second: newSecond,
     });
 
     isUpdatingFromExternal.current = false;
@@ -106,12 +148,18 @@ export function useTypedDate({
       newMonth: number | null,
       newDay: number | null,
       newYear: number | null,
+      newHour: number | null = null,
+      newMinute: number | null = null,
+      newSecond: number | null = null,
     ) => {
       if (isUpdatingFromExternal.current) return;
 
       const validMonth = newMonth;
       let validDay = newDay;
       const validYear = newYear;
+      const validHour = newHour;
+      const validMinute = newMinute;
+      const validSecond = newSecond;
 
       if (validMonth !== null && validYear !== null && validDay !== null) {
         const maxDays = getMaxDaysInMonth(validMonth, validYear);
@@ -122,54 +170,81 @@ export function useTypedDate({
         month: validMonth,
         day: validDay,
         year: validYear,
+        hour: validHour,
+        minute: validMinute,
+        second: validSecond,
       };
 
       setState({
         year: validYear,
         month: validMonth,
         day: validDay,
+        hour: validHour,
+        minute: validMinute,
+        second: validSecond,
       });
 
       if (validMonth !== null && validDay !== null && validYear !== null) {
         if (validYear >= 1000 && isValidDate(validYear, validMonth, validDay)) {
-          onChange?.(new Date(validYear, validMonth - 1, validDay));
+          const hour = hasTime ? (validHour ?? 0) : 0;
+          const minute = hasTime ? (validMinute ?? 0) : 0;
+          const second = hasTime ? (validSecond ?? 0) : 0;
+          
+          if (!hasTime || isValidTime(hour, minute)) {
+            onChange?.(new Date(validYear, validMonth - 1, validDay, hour, minute, second));
+          }
         }
       }
     },
-    [onChange],
+    [onChange, hasTime],
   );
 
   const updateDatePart = useCallback(
-    (type: "month" | "day" | "year", value: number | null) => {
+    (type: "month" | "day" | "year" | "hour" | "minute" | "second", value: number | null) => {
       if (isUpdatingFromExternal.current) return;
 
       const {
         month: currentMonth,
         day: currentDay,
         year: currentYear,
+        hour: currentHour,
+        minute: currentMinute,
+        second: currentSecond,
       } = internalStateRef.current;
 
       let newMonth = currentMonth;
       let newDay = currentDay;
       let newYear = currentYear;
+      let newHour = currentHour;
+      let newMinute = currentMinute;
+      let newSecond = currentSecond;
 
       if (type === "month") {
         newMonth = value;
       } else if (type === "day") {
         newDay = value;
-      } else {
+      } else if (type === "year") {
         newYear = value;
+      } else if (type === "hour") {
+        newHour = value;
+      } else if (type === "minute") {
+        newMinute = value;
+      } else if (type === "second") {
+        newSecond = value;
       }
 
-      commitDateChanges(newMonth, newDay, newYear);
+      commitDateChanges(newMonth, newDay, newYear, newHour, newMinute, newSecond);
     },
     [commitDateChanges],
   );
 
-  const getSegmentValue = (segmentType: "month" | "day" | "year") => {
+  const getSegmentValue = (segmentType: "month" | "day" | "year" | "hour" | "minute" | "second") => {
     if (segmentType === "month") return state.month;
     if (segmentType === "day") return state.day;
-    return state.year;
+    if (segmentType === "year") return state.year;
+    if (segmentType === "hour") return state.hour;
+    if (segmentType === "minute") return state.minute;
+    return state.second;
   };
 
   const getSegmentDisplay = (segIndex: number) => {
@@ -183,9 +258,25 @@ export function useTypedDate({
     return pad(getSegmentValue(segmentType), maxLen);
   };
 
-  const formattedValue = segmentOrder
-    .map((_, index) => getSegmentDisplay(index))
-    .join(separator);
+  const formattedValue = useMemo(() => {
+    const dateSegments: string[] = [];
+    const timeSegments: string[] = [];
+    
+    segmentOrder.forEach((segment: string, index: number) => {
+      const display = getSegmentDisplay(index);
+      if (segment === "hour" || segment === "minute" || segment === "second") {
+        timeSegments.push(display);
+      } else {
+        dateSegments.push(display);
+      }
+    });
+    
+    const dateString = dateSegments.join(dateSeparator);
+    const timeString = timeSegments.join(timeSeparator);
+    
+    return hasTime ? `${dateString} ${timeString}` : dateString;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [segmentOrder, dateSeparator, timeSeparator, hasTime, activeSegment, buffer, state, getSegmentDisplay]);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -234,12 +325,12 @@ export function useTypedDate({
       if (e.shiftKey && activeSegment > 0) {
         e.preventDefault();
         setBuffer("");
-        setActiveSegment((prev) => prev - 1);
+        setActiveSegment((prev: number) => prev - 1);
         return;
       } else if (!e.shiftKey && activeSegment < segmentPositions.length - 1) {
         e.preventDefault();
         setBuffer("");
-        setActiveSegment((prev) => prev + 1);
+        setActiveSegment((prev: number) => prev + 1);
         return;
       }
       setBuffer("");
@@ -249,18 +340,18 @@ export function useTypedDate({
     if (key === "ArrowLeft") {
       e.preventDefault();
       setBuffer("");
-      setActiveSegment((prev) => (prev > 0 ? prev - 1 : 0));
+        setActiveSegment((prev: number) => (prev > 0 ? prev - 1 : 0));
       return;
     }
 
     if (key === "ArrowRight") {
       e.preventDefault();
       setBuffer("");
-      setActiveSegment((prev) =>
-        prev < segmentPositions.length - 1
-          ? prev + 1
-          : segmentPositions.length - 1,
-      );
+        setActiveSegment((prev: number) =>
+          prev < segmentPositions.length - 1
+            ? prev + 1
+            : segmentPositions.length - 1,
+        );
       return;
     }
 
@@ -271,6 +362,9 @@ export function useTypedDate({
         month: currentMonth,
         day: currentDay,
         year: currentYear,
+        hour: currentHour,
+        minute: currentMinute,
+        second: currentSecond,
       } = internalStateRef.current;
 
       const segmentType = segmentOrder[activeSegment];
@@ -306,6 +400,33 @@ export function useTypedDate({
         if (newYear !== yearVal) {
           updateDatePart("year", newYear);
         }
+      } else if (segmentType === "hour") {
+        const hourVal = currentHour ?? 0;
+        const newHour =
+          key === "ArrowUp"
+            ? Math.min(hourVal + 1, 23)
+            : Math.max(hourVal - 1, 0);
+        if (newHour !== hourVal) {
+          updateDatePart("hour", newHour);
+        }
+      } else if (segmentType === "minute") {
+        const minuteVal = currentMinute ?? 0;
+        const newMinute =
+          key === "ArrowUp"
+            ? Math.min(minuteVal + 1, 59)
+            : Math.max(minuteVal - 1, 0);
+        if (newMinute !== minuteVal) {
+          updateDatePart("minute", newMinute);
+        }
+      } else if (segmentType === "second") {
+        const secondVal = currentSecond ?? 0;
+        const newSecond =
+          key === "ArrowUp"
+            ? Math.min(secondVal + 1, 59)
+            : Math.max(secondVal - 1, 0);
+        if (newSecond !== secondVal) {
+          updateDatePart("second", newSecond);
+        }
       }
       return;
     }
@@ -338,6 +459,12 @@ export function useTypedDate({
             yearBufferRef.current = "";
             updateDatePart("year", Math.min(Math.max(parsed, 1000), 9999));
           }
+        } else if (segmentType === "hour") {
+          updateDatePart("hour", Math.min(parsed, 23));
+        } else if (segmentType === "minute") {
+          updateDatePart("minute", Math.min(parsed, 59));
+        } else if (segmentType === "second") {
+          updateDatePart("second", Math.min(parsed, 59));
         }
 
         if (newBuffer.length === maxLen) {
@@ -403,6 +530,12 @@ export function useTypedDate({
         updateDatePart("day", Math.min(parsed, maxDay));
       } else if (segmentType === "year") {
         updateDatePart("year", parsed);
+      } else if (segmentType === "hour") {
+        updateDatePart("hour", Math.min(parsed, 23));
+      } else if (segmentType === "minute") {
+        updateDatePart("minute", Math.min(parsed, 59));
+      } else if (segmentType === "second") {
+        updateDatePart("second", Math.min(parsed, 59));
       }
 
       setBuffer("");

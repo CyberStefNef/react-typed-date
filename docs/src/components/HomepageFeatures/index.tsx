@@ -88,6 +88,7 @@ function ReactDayPickerPopover({ date, setDate }): React.ReactNode {
 
 export default function HomepageFeatures(): React.ReactNode {
   const [date, setDate] = useState(new Date());
+  const [dateTimeSeconds, setDateTimeSeconds] = useState(new Date());
 
   const FeatureList: FeatureItem[] = [
     {
@@ -132,6 +133,18 @@ export default function HomepageFeatures(): React.ReactNode {
           {FeatureList.map((props, idx) => (
             <Feature key={idx} {...props} />
           ))}
+        </div>
+
+        <div className={styles.divider}>
+          <Heading as="h3" className={styles.sectionTitle}>
+            Time Support
+          </Heading>
+          <TypedDateInput
+            format="MM/DD/YYYY HH:mm:ss"
+            value={dateTimeSeconds}
+            onChange={setDateTimeSeconds}
+            className={styles.dateCustomCss}
+          />
         </div>
 
         <div className={styles.divider}>

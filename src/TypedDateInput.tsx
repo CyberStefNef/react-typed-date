@@ -5,6 +5,7 @@ import { TypedDateProps } from "./types";
 export function TypedDateInput({
   value,
   onChange,
+  format,
   className,
   ...props
 }: Omit<
@@ -22,6 +23,7 @@ export function TypedDateInput({
   const { inputProps } = useTypedDate({
     value,
     onChange,
+    format,
   });
 
   return <input className={className} {...inputProps} {...props} />;

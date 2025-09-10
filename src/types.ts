@@ -8,6 +8,9 @@ export interface SegmentState {
   year: number | null;
   month: number | null;
   day: number | null;
+  hour: number | null;
+  minute: number | null;
+  second: number | null;
 }
 
 export interface SegmentPosition {

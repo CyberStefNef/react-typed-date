@@ -33,3 +33,7 @@ export const pad = (num: number | null, length: number): string => {
   if (num === null) return "_".repeat(length);
   return String(num).padStart(length, "0");
 };
+
+export const isValidTime = (hour: number, minute: number): boolean => {
+  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+};
