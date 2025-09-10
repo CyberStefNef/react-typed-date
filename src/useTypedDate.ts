@@ -75,6 +75,7 @@ export function useTypedDate({
       segmentOrder,
       hasTime: timeSegments.length > 0,
     };
+
   }, [format]);
 
   const { dateSeparator, timeSeparator, segmentOrder, hasTime } = formatData;
