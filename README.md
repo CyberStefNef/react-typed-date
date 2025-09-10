@@ -4,7 +4,7 @@
 ![license](https://img.shields.io/badge/license-MIT-green)
 ![bundle size](https://img.shields.io/bundlephobia/minzip/react-typed-date)
 
-A React library for creating an intuitive, keyboard-friendly date input field with segment navigation.
+A React library for creating an intuitive, keyboard-friendly date and time input field with segment navigation.
 
 ## Documentation and Live Demo
 
@@ -24,9 +24,10 @@ The goal is to provide developers with a simple, flexible date input solution th
 
 ## Features
 
-- 🎯 Intuitive keyboard navigation between date segments (month/day/year)
+- 🎯 Intuitive keyboard navigation between date and time segments
 - 🚦 Smart date validation with awareness of month lengths and leap years
-- ⌨️ Proper keyboard interaction with arrow keys for quick date adjustments
+- ⏰ **NEW: Flexible time support** with configurable precision: hour+minute or full seconds
+- ⌨️ Proper keyboard interaction with arrow keys for quick adjustments
 - 🎨 Easily stylable with your preferred CSS solution
 - 📦 TypeScript support with full type definitions
 - 🧩 Zero dependencies
@@ -58,6 +59,7 @@ pnpm add react-typed-date
 
 ## Basic Usage
 
+### Date Only
 ```jsx
 import { useState } from 'react';
 import { TypedDateInput } from 'react-typed-date';
@@ -76,6 +78,34 @@ function App() {
 }
 ```
 
+### Date with Time (NEW)
+```jsx
+import { useState } from 'react';
+import { TypedDateInput } from 'react-typed-date';
+
+function DateTimeApp() {
+  const [dateTime, setDateTime] = useState(new Date());
+
+  return (
+    <div className="App">
+      {/* Hour + Minute precision */}
+      <TypedDateInput
+        format="MM/DD/YYYY HH:mm"
+        value={dateTime} 
+        onChange={setDateTime}
+      />
+      
+      {/* Full seconds precision */}
+      <TypedDateInput
+        format="MM/DD/YYYY HH:mm:ss"
+        value={dateTime} 
+        onChange={setDateTime}
+      />
+    </div>
+  );
+}
+```
+
 ## Advanced Usage with Hook
 
 Use the hook directly for more control and custom UI:
@@ -84,21 +114,21 @@ Use the hook directly for more control and custom UI:
 import { useState } from 'react';
 import { useTypedDate } from 'react-typed-date';
 
-function CustomDateInput() {
-  const [date, setDate] = useState(new Date());
+function CustomDateTimeInput() {
+  const [dateTime, setDateTime] = useState(new Date());
   
   const { inputProps } = useTypedDate({
-    value: date,
-    onChange: setDate,
-    format: "MM/DD/YYYY"
+    value: dateTime,
+    onChange: setDateTime,
+    format: "DD/MM/YYYY HH:mm" // European format with time
   });
 
   return (
-    <div className="custom-date-container">
+    <div className="custom-datetime-container">
       <input 
         {...inputProps} 
-        className="date-input"
-        aria-label="Date input"
+        className="datetime-input"
+        aria-label="Date and time input"
       />
     </div>
   );
@@ -109,10 +139,11 @@ function CustomDateInput() {
 
 `react-typed-date` provides a seamless user experience:
 
-1. Click anywhere in the date field to focus a segment (month, day, or year)
+1. Click anywhere in the input field to focus a segment (month, day, year, hour, minute, second)
 2. Type numbers to replace the segment value
 3. Use arrow keys to navigate between segments (← →) 
 4. Use up/down arrows (↑ ↓) to increment/decrement values
+5. **Time segments**: Hours validate to 0-23, minutes and seconds to 0-59
 
 ## API Reference
 
@@ -122,7 +153,7 @@ function CustomDateInput() {
 |------|------|---------|-------------|
 | `value` | `Date \| undefined` | `undefined` | Selected date value |
 | `onChange` | `(date: Date) => void` | `undefined` | Callback when date changes |
-| `format` | `string` | `MM/DD/YYYY` | Format using MM, DD, YYYY with custom seperator |
+| `format` | `string` | `MM/DD/YYYY` | Format using MM, DD, YYYY, HH, mm, ss with custom separators |
 | `className` | `string` | `undefined` | CSS class for styling |
 | `...props` | `InputHTMLAttributes<HTMLInputElement>` | | Any other valid input props except `type`, `onMouseUp`, `onKeyDown`, `ref`, `onBlur`, `onFocus` |
 
@@ -159,7 +190,7 @@ The following features are planned for future releases:
 
 - **Date library integration**: Support for popular date libraries like date-fns, Day.js, and Moment.js
 - **Localization**: International date formats and localized month/day names
-- **Time picker**: Add support for time input alongside date
+- ~~**Time picker**: Add support for time input alongside date~~ ✅ **COMPLETED**
 - **Range selection**: Allow selecting date ranges
 - **Validation**: Add date validation feedback
 
