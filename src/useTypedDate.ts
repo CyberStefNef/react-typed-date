@@ -302,7 +302,7 @@ export function useTypedDate({
 
     return hasTime ? `${dateString} ${timeString}` : dateString;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segmentOrder, dateSeparator, timeSeparator, hasTime]);
+  }, [segmentOrder, dateSeparator, timeSeparator, hasTime, state]);
 
   useEffect(() => {
     if (inputRef.current) {
