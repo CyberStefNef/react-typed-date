@@ -47,7 +47,7 @@ export function useTypedDate({
     const parts = format.split(/[\s]+/);
     const datePart = parts[0] || format;
     const timePart = parts[1];
-    
+
     const dateSeparator = datePart.match(/[^A-Za-z]/)?.[0] || "/";
     const timeSeparator = timePart?.match(/[^A-Za-z]/)?.[0] || ":";
 
@@ -69,7 +69,13 @@ export function useTypedDate({
       }),
     ] as Array<"month" | "day" | "year" | "hour" | "minute">;
 
-    return { dateSeparator, timeSeparator, segmentOrder, hasTime: timeSegments.length > 0 };
+    return {
+      dateSeparator,
+      timeSeparator,
+      segmentOrder,
+      hasTime: timeSegments.length > 0,
+    };
+
   }, [format]);
 
   const { dateSeparator, timeSeparator, segmentOrder, hasTime } = formatData;
@@ -89,7 +95,7 @@ export function useTypedDate({
         const nextSegment = segmentOrder[index + 1];
         const currentIsTime = segment === "hour" || segment === "minute";
         const nextIsTime = nextSegment === "hour" || nextSegment === "minute";
-        
+
         if (!currentIsTime && nextIsTime) {
           currentPosition += segmentLength + 1;
         } else if (currentIsTime && nextIsTime) {
@@ -189,9 +195,18 @@ export function useTypedDate({
           const hour = hasTime ? (validHour ?? 0) : 0;
           const minute = hasTime ? (validMinute ?? 0) : 0;
           const second = hasTime ? (validSecond ?? 0) : 0;
-          
+
           if (!hasTime || isValidTime(hour, minute)) {
-            onChange?.(new Date(validYear, validMonth - 1, validDay, hour, minute, second));
+            onChange?.(
+              new Date(
+                validYear,
+                validMonth - 1,
+                validDay,
+                hour,
+                minute,
+                second,
+              ),
+            );
           }
         }
       }
@@ -200,7 +215,10 @@ export function useTypedDate({
   );
 
   const updateDatePart = useCallback(
-    (type: "month" | "day" | "year" | "hour" | "minute" | "second", value: number | null) => {
+    (
+      type: "month" | "day" | "year" | "hour" | "minute" | "second",
+      value: number | null,
+    ) => {
       if (isUpdatingFromExternal.current) return;
 
       const {
@@ -233,12 +251,21 @@ export function useTypedDate({
         newSecond = value;
       }
 
-      commitDateChanges(newMonth, newDay, newYear, newHour, newMinute, newSecond);
+      commitDateChanges(
+        newMonth,
+        newDay,
+        newYear,
+        newHour,
+        newMinute,
+        newSecond,
+      );
     },
     [commitDateChanges],
   );
 
-  const getSegmentValue = (segmentType: "month" | "day" | "year" | "hour" | "minute" | "second") => {
+  const getSegmentValue = (
+    segmentType: "month" | "day" | "year" | "hour" | "minute" | "second",
+  ) => {
     if (segmentType === "month") return state.month;
     if (segmentType === "day") return state.day;
     if (segmentType === "year") return state.year;
@@ -261,7 +288,7 @@ export function useTypedDate({
   const formattedValue = useMemo(() => {
     const dateSegments: string[] = [];
     const timeSegments: string[] = [];
-    
+
     segmentOrder.forEach((segment: string, index: number) => {
       const display = getSegmentDisplay(index);
       if (segment === "hour" || segment === "minute" || segment === "second") {
@@ -270,13 +297,13 @@ export function useTypedDate({
         dateSegments.push(display);
       }
     });
-    
+
     const dateString = dateSegments.join(dateSeparator);
     const timeString = timeSegments.join(timeSeparator);
-    
+
     return hasTime ? `${dateString} ${timeString}` : dateString;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segmentOrder, dateSeparator, timeSeparator, hasTime, activeSegment, buffer, state, getSegmentDisplay]);
+  }, [segmentOrder, dateSeparator, timeSeparator, hasTime]);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -340,18 +367,18 @@ export function useTypedDate({
     if (key === "ArrowLeft") {
       e.preventDefault();
       setBuffer("");
-        setActiveSegment((prev: number) => (prev > 0 ? prev - 1 : 0));
+      setActiveSegment((prev: number) => (prev > 0 ? prev - 1 : 0));
       return;
     }
 
     if (key === "ArrowRight") {
       e.preventDefault();
       setBuffer("");
-        setActiveSegment((prev: number) =>
-          prev < segmentPositions.length - 1
-            ? prev + 1
-            : segmentPositions.length - 1,
-        );
+      setActiveSegment((prev: number) =>
+        prev < segmentPositions.length - 1
+          ? prev + 1
+          : segmentPositions.length - 1,
+      );
       return;
     }
 
