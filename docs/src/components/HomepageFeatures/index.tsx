@@ -88,7 +88,6 @@ function ReactDayPickerPopover({ date, setDate }): React.ReactNode {
 
 export default function HomepageFeatures(): React.ReactNode {
   const [date, setDate] = useState(new Date());
-  const [dateTime, setDateTime] = useState(new Date());
   const [dateTimeSeconds, setDateTimeSeconds] = useState(new Date());
 
   const FeatureList: FeatureItem[] = [
