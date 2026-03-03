@@ -6,7 +6,7 @@ sidebar_position: 4
 
 # Flexible Time Support
 
-React Typed Date supports flexible time input with different precision levels: hours with minutes, or full seconds support alongside date selection.
+React Typed Date supports both **24-hour** and **12-hour (AM/PM)** input, with optional seconds precision alongside date selection.
 
 ## Quick Start
 
@@ -30,8 +30,10 @@ function App() {
 
 ### Available Time Segments
 - **HH**: Hour in 24-hour format (00-23)  
+- **hh**: Hour in 12-hour format (01-12)
 - **mm**: Minutes (00-59)
 - **ss**: Seconds (00-59)
+- **A / a**: Meridiem segment (`AM`/`PM` or `am`/`pm`)
 
 ### Common Formats
 ```jsx
@@ -49,6 +51,12 @@ function App() {
 
 // ISO-like format with seconds
 <TypedDateInput format="YYYY-MM-DD HH:mm:ss" />
+
+// 12-hour format with meridiem
+<TypedDateInput format="MM/DD/YYYY hh:mm A" />
+
+// 12-hour format with lowercase meridiem
+<TypedDateInput format="MM/DD/YYYY hh:mm a" />
 ```
 
 ## User Interaction
@@ -61,6 +69,7 @@ function App() {
 
 ### Time Validation
 - Hours automatically clamp to 0-23 range
+- 12-hour input uses 1-12 with AM/PM conversion
 - Minutes automatically clamp to 0-59 range
 - Invalid entries are corrected on blur or segment completion
 

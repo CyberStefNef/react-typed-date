@@ -89,6 +89,11 @@ function ReactDayPickerPopover({ date, setDate }): React.ReactNode {
 export default function HomepageFeatures(): React.ReactNode {
   const [date, setDate] = useState(new Date());
   const [dateTimeSeconds, setDateTimeSeconds] = useState(new Date());
+  const [emptyDateTimeSeconds, setEmptyDateTimeSeconds] = useState<
+    Date | undefined
+  >(undefined);
+  const [bookingDate, setBookingDate] = useState<Date | undefined>(undefined);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   const FeatureList: FeatureItem[] = [
     {
@@ -139,12 +144,46 @@ export default function HomepageFeatures(): React.ReactNode {
           <Heading as="h3" className={styles.sectionTitle}>
             Time Support
           </Heading>
+          <p className={styles.sectionDescription}>
+            Prefilled datetime input
+          </p>
           <TypedDateInput
             format="MM/DD/YYYY HH:mm:ss"
             value={dateTimeSeconds}
             onChange={setDateTimeSeconds}
             className={styles.dateCustomCss}
           />
+          <p className={styles.sectionDescription}>
+            Empty datetime input (for keyboard regression testing)
+          </p>
+          <TypedDateInput
+            format="MM/DD/YYYY HH:mm:ss"
+            value={emptyDateTimeSeconds}
+            onChange={setEmptyDateTimeSeconds}
+            className={styles.dateCustomCss}
+          />
+          <p className={styles.sectionDescription}>
+            Required input with min/max validation
+          </p>
+          <TypedDateInput
+            format="MM/DD/YYYY HH:mm"
+            value={bookingDate}
+            onChange={setBookingDate}
+            required
+            minDate={new Date(2026, 0, 1)}
+            maxDate={new Date(2026, 11, 31, 23, 59)}
+            onValidationChange={(validation) => {
+              setBookingError(
+                validation.isValid ? null : validation.message || validation.code,
+              );
+            }}
+            className={styles.dateCustomCss}
+          />
+          {bookingError && (
+            <p className={styles.sectionDescription} style={{ color: "#b42318" }}>
+              {bookingError}
+            </p>
+          )}
         </div>
 
         <div className={styles.divider}>

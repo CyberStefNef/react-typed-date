@@ -58,6 +58,9 @@ You can customize both date and time formats:
 // European format with time
 <TypedDateInput format="DD/MM/YYYY HH:mm" value={date} onChange={setDate} />
 
+// 12-hour format with meridiem
+<TypedDateInput format="MM/DD/YYYY hh:mm A" value={date} onChange={setDate} />
+
 // Date only (original functionality)
 <TypedDateInput format="MM/DD/YYYY" value={date} onChange={setDate} />
 
@@ -75,3 +78,32 @@ When using time formats, the component provides intuitive interaction:
 4. **Arrow Key Adjustment**: Use ↑/↓ to increment/decrement time values
 
 The time segments work seamlessly with the existing date functionality, maintaining the same keyboard-friendly experience.
+
+## Validation and Date Range
+
+```jsx
+import { useState } from 'react';
+import { TypedDateInput } from 'react-typed-date';
+
+function BookingInput() {
+  const [date, setDate] = useState(undefined);
+  const [error, setError] = useState(null);
+
+  return (
+    <div>
+      <TypedDateInput
+        value={date}
+        onChange={setDate}
+        format="MM/DD/YYYY HH:mm"
+        required
+        minDate={new Date(2026, 0, 1)}
+        maxDate={new Date(2026, 11, 31, 23, 59)}
+        onValidationChange={(validation) => {
+          setError(validation.isValid ? null : validation.message || validation.code);
+        }}
+      />
+      {error && <p>{error}</p>}
+    </div>
+  );
+}
+```

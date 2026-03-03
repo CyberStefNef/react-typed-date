@@ -87,6 +87,24 @@ describe("useTypedDate - 24-hour Time Support", () => {
     expect(input.value).toBe("12/25/2023 14:59");
   });
 
+  it("should render full hour segment when entering 00", async () => {
+    const onChange = vi.fn();
+    const screen = render(
+      <TestComponent
+        value={undefined}
+        format="MM/DD/YYYY HH:mm"
+        onChange={onChange}
+      />,
+    );
+
+    const input = screen.getByRole("textbox").element() as HTMLInputElement;
+
+    input.focus();
+    await userEvent.keyboard("1225202300");
+
+    expect(input.value).toBe("12/25/2023 00:__");
+  });
+
   it("should handle arrow keys for time segments", async () => {
     const onChange = vi.fn();
     const initialDate = new Date(2023, 11, 25, 14, 30);
@@ -163,6 +181,24 @@ describe("useTypedDate - 24-hour Time Support", () => {
     expect(input.value).toBe("12/25/2023 14:30:59");
   });
 
+  it("should render full second segment when entering 00", async () => {
+    const onChange = vi.fn();
+    const screen = render(
+      <TestComponent
+        value={undefined}
+        format="MM/DD/YYYY HH:mm:ss"
+        onChange={onChange}
+      />,
+    );
+
+    const input = screen.getByRole("textbox").element() as HTMLInputElement;
+
+    input.focus();
+    await userEvent.keyboard("12252023143000");
+
+    expect(input.value).toBe("12/25/2023 14:30:00");
+  });
+
   it("should handle arrow keys for seconds", async () => {
     const onChange = vi.fn();
     const initialDate = new Date(2023, 11, 25, 14, 30, 45);
@@ -188,5 +224,106 @@ describe("useTypedDate - 24-hour Time Support", () => {
     // Decrease seconds with arrow down
     await userEvent.keyboard("{ArrowDown}{ArrowDown}");
     expect(input.value).toBe("12/25/2023 14:30:44");
+  });
+});
+
+describe("useTypedDate - 12-hour Time Support", () => {
+  it("should render with format MM/DD/YYYY hh:mm A", () => {
+    const onChange = vi.fn();
+    const screen = render(
+      <TestComponent
+        value={undefined}
+        format="MM/DD/YYYY hh:mm A"
+        onChange={onChange}
+      />,
+    );
+
+    const input = screen.getByRole("textbox").element() as HTMLInputElement;
+    expect(input.value).toBe("__/__/____ __:__ __");
+  });
+
+  it("should render midnight as 12 in 12-hour mode", () => {
+    const onChange = vi.fn();
+    const midnight = new Date(2023, 11, 25, 0, 5);
+    const screen = render(
+      <TestComponent
+        value={midnight}
+        format="MM/DD/YYYY hh:mm A"
+        onChange={onChange}
+      />,
+    );
+
+    const input = screen.getByRole("textbox").element() as HTMLInputElement;
+    expect(input.value).toBe("12/25/2023 12:05 AM");
+  });
+
+  it("should accept meridiem letter input and convert hour", async () => {
+    const onChange = vi.fn();
+    const screen = render(
+      <TestComponent
+        value={undefined}
+        format="MM/DD/YYYY hh:mm A"
+        onChange={onChange}
+      />,
+    );
+
+    const input = screen.getByRole("textbox").element() as HTMLInputElement;
+
+    input.focus();
+    await userEvent.keyboard("122520231130");
+
+    expect(input.value).toBe("12/25/2023 11:30 AM");
+
+    await userEvent.keyboard("p");
+    expect(input.value).toBe("12/25/2023 11:30 PM");
+
+    const callArgs = onChange.mock.calls[onChange.mock.calls.length - 1];
+    const date = callArgs[0] as Date;
+    expect(date.getHours()).toBe(23);
+  });
+
+  it("should toggle meridiem with arrow keys", async () => {
+    const onChange = vi.fn();
+    const initialDate = new Date(2023, 11, 25, 10, 30);
+    const screen = render(
+      <TestComponent
+        value={initialDate}
+        format="MM/DD/YYYY hh:mm A"
+        onChange={onChange}
+      />,
+    );
+
+    const input = screen.getByRole("textbox").element() as HTMLInputElement;
+    expect(input.value).toBe("12/25/2023 10:30 AM");
+
+    input.focus();
+    await userEvent.keyboard(
+      "{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}{ArrowRight}",
+    );
+    await userEvent.keyboard("{ArrowUp}");
+    expect(input.value).toBe("12/25/2023 10:30 PM");
+
+    await userEvent.keyboard("{ArrowDown}");
+    expect(input.value).toBe("12/25/2023 10:30 AM");
+  });
+
+  it("should support lowercase meridiem token", async () => {
+    const onChange = vi.fn();
+    const screen = render(
+      <TestComponent
+        value={undefined}
+        format="MM/DD/YYYY hh:mm a"
+        onChange={onChange}
+      />,
+    );
+
+    const input = screen.getByRole("textbox").element() as HTMLInputElement;
+
+    input.focus();
+    await userEvent.keyboard("122520231230");
+    expect(input.value).toBe("12/25/2023 12:30 am");
+
+    await userEvent.keyboard("p");
+    expect(input.value).toBe("12/25/2023 12:30 pm");
   });
 });

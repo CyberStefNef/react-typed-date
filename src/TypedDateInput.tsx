@@ -6,6 +6,10 @@ export function TypedDateInput({
   value,
   onChange,
   format,
+  required,
+  minDate,
+  maxDate,
+  onValidationChange,
   className,
   ...props
 }: Omit<
@@ -24,6 +28,10 @@ export function TypedDateInput({
     value,
     onChange,
     format,
+    required,
+    minDate,
+    maxDate,
+    onValidationChange,
   });
 
   return <input className={className} {...inputProps} {...props} />;

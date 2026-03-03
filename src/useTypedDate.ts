@@ -1,11 +1,61 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { getMaxDaysInMonth, isValidDate, isValidTime, pad } from "./utils";
-import { TypedDateProps, SegmentPosition, SegmentState } from "./types";
+import {
+  getMaxDaysInMonth,
+  isValidDate,
+  isValidTime,
+  pad,
+  validateTypedDate,
+} from "./utils";
+import {
+  TypedDateProps,
+  SegmentPosition,
+  SegmentState,
+  SegmentType,
+  TypedDateValidation,
+  ValidationCode,
+} from "./types";
+
+const isTimeSegment = (segment: SegmentType): boolean =>
+  segment === "hour" ||
+  segment === "minute" ||
+  segment === "second" ||
+  segment === "meridiem";
+
+type NumericSegmentType = Exclude<SegmentType, "meridiem">;
+
+interface ParsedFormatSegment {
+  type: SegmentType;
+  token: string;
+  is12Hour?: boolean;
+  meridiemLowercase?: boolean;
+}
+
+const to12Hour = (hour: number): number => {
+  if (hour === 0) return 12;
+  if (hour > 12) return hour - 12;
+  return hour;
+};
+
+const hourFrom12AndMeridiem = (hour12: number, meridiem: "AM" | "PM") => {
+  if (meridiem === "AM") {
+    return hour12 === 12 ? 0 : hour12;
+  }
+  return hour12 === 12 ? 12 : hour12 + 12;
+};
+
+const getMeridiem = (hour: number | null): "AM" | "PM" | null => {
+  if (hour === null) return null;
+  return hour >= 12 ? "PM" : "AM";
+};
 
 export function useTypedDate({
   value,
   onChange,
   format = "MM/DD/YYYY",
+  required = false,
+  minDate,
+  maxDate,
+  onValidationChange,
 }: TypedDateProps) {
   const [state, setState] = useState<SegmentState>(
     value
@@ -42,77 +92,94 @@ export function useTypedDate({
 
   const yearBufferRef = useRef<string>("");
   const isUpdatingFromExternal = useRef(false);
+  const lastValidationCodeRef = useRef<ValidationCode | null>(null);
 
   const formatData = useMemo(() => {
-    const parts = format.split(/[\s]+/);
-    const datePart = parts[0] || format;
-    const timePart = parts[1];
+    const tokenRegex = /(YYYY|MM|DD|HH|hh|mm|ss|A|a)/g;
+    const segments: ParsedFormatSegment[] = [];
+    const separators: string[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
 
-    const dateSeparator = datePart.match(/[^A-Za-z]/)?.[0] || "/";
-    const timeSeparator = timePart?.match(/[^A-Za-z]/)?.[0] || ":";
+    while ((match = tokenRegex.exec(format)) !== null) {
+      if (segments.length > 0) {
+        separators.push(format.slice(lastIndex, match.index));
+      }
 
-    const dateSegments = datePart.split(/[^A-Za-z]/);
-    const timeSegments = timePart ? timePart.split(/[^A-Za-z]/) : [];
+      const token = match[0];
+      if (token === "YYYY") {
+        segments.push({ type: "year", token });
+      } else if (token === "MM") {
+        segments.push({ type: "month", token });
+      } else if (token === "DD") {
+        segments.push({ type: "day", token });
+      } else if (token === "HH") {
+        segments.push({ type: "hour", token, is12Hour: false });
+      } else if (token === "hh") {
+        segments.push({ type: "hour", token, is12Hour: true });
+      } else if (token === "mm") {
+        segments.push({ type: "minute", token });
+      } else if (token === "ss") {
+        segments.push({ type: "second", token });
+      } else if (token === "A") {
+        segments.push({ type: "meridiem", token, meridiemLowercase: false });
+      } else if (token === "a") {
+        segments.push({ type: "meridiem", token, meridiemLowercase: true });
+      }
 
-    const segmentOrder = [
-      ...dateSegments.map((seg) => {
-        if (seg.startsWith("M")) return "month";
-        if (seg.startsWith("D")) return "day";
-        if (seg.startsWith("Y")) return "year";
-        return "month";
-      }),
-      ...timeSegments.map((seg) => {
-        if (seg.startsWith("H") || seg.startsWith("h")) return "hour";
-        if (seg.startsWith("m")) return "minute";
-        if (seg.startsWith("s")) return "second";
-        return "hour";
-      }),
-    ] as Array<"month" | "day" | "year" | "hour" | "minute">;
+      lastIndex = match.index + token.length;
+    }
+
+    const parsedSegments =
+      segments.length > 0
+        ? segments
+        : ([
+            { type: "month", token: "MM" },
+            { type: "day", token: "DD" },
+            { type: "year", token: "YYYY" },
+          ] as ParsedFormatSegment[]);
+    const parsedSeparators =
+      separators.length > 0 ? separators : ["/", "/"].slice(0, parsedSegments.length - 1);
+    const segmentOrder = parsedSegments.map((segment) => segment.type);
 
     return {
-      dateSeparator,
-      timeSeparator,
+      segments: parsedSegments,
+      separators: parsedSeparators,
       segmentOrder,
-      hasTime: timeSegments.length > 0,
+      hasTime: segmentOrder.some((segment) => isTimeSegment(segment)),
     };
   }, [format]);
 
-  const { dateSeparator, timeSeparator, segmentOrder, hasTime } = formatData;
+  const { segments, separators, segmentOrder, hasTime } = formatData;
+  const uniqueSegments = useMemo(
+    () => Array.from(new Set(segmentOrder)),
+    [segmentOrder],
+  );
 
   const segmentPositions = useMemo<SegmentPosition[]>(() => {
     const positions: SegmentPosition[] = [];
     let currentPosition = 0;
 
-    segmentOrder.forEach((segment, index) => {
-      const segmentLength = segment === "year" ? 4 : 2;
+    segments.forEach((segment, index) => {
+      const segmentLength = segment.type === "year" ? 4 : 2;
       positions.push({
         start: currentPosition,
         end: currentPosition + segmentLength,
       });
 
-      if (index < segmentOrder.length - 1) {
-        const nextSegment = segmentOrder[index + 1];
-        const currentIsTime = segment === "hour" || segment === "minute";
-        const nextIsTime = nextSegment === "hour" || nextSegment === "minute";
-
-        if (!currentIsTime && nextIsTime) {
-          currentPosition += segmentLength + 1;
-        } else if (currentIsTime && nextIsTime) {
-          currentPosition += segmentLength + timeSeparator.length;
-        } else {
-          currentPosition += segmentLength + dateSeparator.length;
-        }
+      if (index < segments.length - 1) {
+        currentPosition += segmentLength + (separators[index]?.length ?? 0);
       } else {
         currentPosition += segmentLength;
       }
     });
 
     return positions;
-  }, [segmentOrder, dateSeparator, timeSeparator]);
+  }, [segments, separators]);
 
   const maxLengths = useMemo(
-    () => segmentOrder.map((type: string) => (type === "year" ? 4 : 2)),
-    [segmentOrder],
+    () => segments.map((segment) => (segment.type === "year" ? 4 : 2)),
+    [segments],
   );
 
   useEffect(() => {
@@ -195,29 +262,31 @@ export function useTypedDate({
           const minute = hasTime ? (validMinute ?? 0) : 0;
           const second = hasTime ? (validSecond ?? 0) : 0;
 
-          if (!hasTime || isValidTime(hour, minute)) {
-            onChange?.(
-              new Date(
-                validYear,
-                validMonth - 1,
-                validDay,
-                hour,
-                minute,
-                second,
-              ),
+          if (!hasTime || (isValidTime(hour, minute) && second <= 59)) {
+            const nextDate = new Date(
+              validYear,
+              validMonth - 1,
+              validDay,
+              hour,
+              minute,
+              second,
             );
+
+            if (
+              (!minDate || nextDate >= minDate) &&
+              (!maxDate || nextDate <= maxDate)
+            ) {
+              onChange?.(nextDate);
+            }
           }
         }
       }
     },
-    [onChange, hasTime],
+    [onChange, hasTime, minDate, maxDate],
   );
 
   const updateDatePart = useCallback(
-    (
-      type: "month" | "day" | "year" | "hour" | "minute" | "second",
-      value: number | null,
-    ) => {
+    (type: NumericSegmentType, value: number | null) => {
       if (isUpdatingFromExternal.current) return;
 
       const {
@@ -262,47 +331,60 @@ export function useTypedDate({
     [commitDateChanges],
   );
 
-  const getSegmentValue = (
-    segmentType: "month" | "day" | "year" | "hour" | "minute" | "second",
-  ) => {
-    if (segmentType === "month") return state.month;
-    if (segmentType === "day") return state.day;
-    if (segmentType === "year") return state.year;
-    if (segmentType === "hour") return state.hour;
-    if (segmentType === "minute") return state.minute;
-    return state.second;
-  };
+  const getSegmentValue = useCallback(
+    (segmentType: NumericSegmentType) => {
+      if (segmentType === "month") return state.month;
+      if (segmentType === "day") return state.day;
+      if (segmentType === "year") return state.year;
+      if (segmentType === "hour") return state.hour;
+      if (segmentType === "minute") return state.minute;
+      return state.second;
+    },
+    [state],
+  );
 
   const getSegmentDisplay = (segIndex: number) => {
-    const segmentType = segmentOrder[segIndex];
+    const segmentConfig = segments[segIndex];
+    const segmentType = segmentConfig.type;
     const maxLen = segmentType === "year" ? 4 : 2;
 
     if (activeSegment === segIndex && buffer !== "") {
       return buffer.padEnd(maxLen, "_");
     }
 
+    if (segmentType === "meridiem") {
+      const meridiem = getMeridiem(state.hour);
+      if (!meridiem) return "__";
+      return segmentConfig.meridiemLowercase
+        ? meridiem.toLowerCase()
+        : meridiem;
+    }
+
+    if (segmentType === "hour" && segmentConfig.is12Hour) {
+      const hour = getSegmentValue("hour");
+      return pad(hour === null ? null : to12Hour(hour), maxLen);
+    }
+
     return pad(getSegmentValue(segmentType), maxLen);
   };
 
   const formattedValue = useMemo(() => {
-    const dateSegments: string[] = [];
-    const timeSegments: string[] = [];
-
-    segmentOrder.forEach((segment: string, index: number) => {
-      const display = getSegmentDisplay(index);
-      if (segment === "hour" || segment === "minute" || segment === "second") {
-        timeSegments.push(display);
-      } else {
-        dateSegments.push(display);
+    let formatted = "";
+    segments.forEach((_, index) => {
+      if (index > 0) {
+        formatted += separators[index - 1] ?? "";
       }
+      formatted += getSegmentDisplay(index);
     });
-
-    const dateString = dateSegments.join(dateSeparator);
-    const timeString = timeSegments.join(timeSeparator);
-
-    return hasTime ? `${dateString} ${timeString}` : dateString;
+    return formatted;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segmentOrder, dateSeparator, timeSeparator, hasTime, state]);
+  }, [
+    segments,
+    separators,
+    state,
+    activeSegment,
+    buffer,
+  ]);
 
   useEffect(() => {
     if (inputRef.current) {
@@ -344,6 +426,8 @@ export function useTypedDate({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     const key = e.key;
+    const activeSegmentConfig = segments[activeSegment];
+    const segmentType = activeSegmentConfig.type;
 
     if (key === "Tab") {
       tabKeyPressedRef.current = true;
@@ -392,8 +476,6 @@ export function useTypedDate({
         minute: currentMinute,
         second: currentSecond,
       } = internalStateRef.current;
-
-      const segmentType = segmentOrder[activeSegment];
 
       if (segmentType === "month") {
         const monthVal = currentMonth ?? 0;
@@ -453,13 +535,37 @@ export function useTypedDate({
         if (newSecond !== secondVal) {
           updateDatePart("second", newSecond);
         }
+      } else if (segmentType === "meridiem") {
+        if (currentHour !== null) {
+          const toggledHour =
+            currentHour >= 12 ? currentHour - 12 : currentHour + 12;
+          updateDatePart("hour", toggledHour);
+        }
       }
+      return;
+    }
+
+    if (/^[aApP]$/.test(key)) {
+      if (segmentType !== "meridiem") return;
+
+      e.preventDefault();
+      setBuffer("");
+      const { hour: currentHour } = internalStateRef.current;
+      if (currentHour === null) return;
+
+      const currentHour12 = to12Hour(currentHour);
+      const targetMeridiem = key.toLowerCase() === "a" ? "AM" : "PM";
+      updateDatePart(
+        "hour",
+        hourFrom12AndMeridiem(currentHour12, targetMeridiem),
+      );
       return;
     }
 
     if (/^\d$/.test(key)) {
       e.preventDefault();
-      const segmentType = segmentOrder[activeSegment];
+      if (segmentType === "meridiem") return;
+
       const maxLen = maxLengths[activeSegment];
       const newBuffer = buffer + key;
 
@@ -486,7 +592,19 @@ export function useTypedDate({
             updateDatePart("year", Math.min(Math.max(parsed, 1000), 9999));
           }
         } else if (segmentType === "hour") {
-          updateDatePart("hour", Math.min(parsed, 23));
+          if (activeSegmentConfig.is12Hour) {
+            const normalized12Hour = parsed <= 0 ? 12 : Math.min(parsed, 12);
+            const currentMeridiem = getMeridiem(internalStateRef.current.hour);
+            updateDatePart(
+              "hour",
+              hourFrom12AndMeridiem(
+                normalized12Hour,
+                currentMeridiem ?? "AM",
+              ),
+            );
+          } else {
+            updateDatePart("hour", Math.min(parsed, 23));
+          }
         } else if (segmentType === "minute") {
           updateDatePart("minute", Math.min(parsed, 59));
         } else if (segmentType === "second") {
@@ -541,7 +659,8 @@ export function useTypedDate({
 
   const handleBlur = () => {
     if (buffer) {
-      const segmentType = segmentOrder[activeSegment];
+      const activeSegmentConfig = segments[activeSegment];
+      const segmentType = activeSegmentConfig.type;
       const parsed = parseInt(buffer, 10);
 
       if (segmentType === "month") {
@@ -557,7 +676,16 @@ export function useTypedDate({
       } else if (segmentType === "year") {
         updateDatePart("year", parsed);
       } else if (segmentType === "hour") {
-        updateDatePart("hour", Math.min(parsed, 23));
+        if (activeSegmentConfig.is12Hour) {
+          const normalized12Hour = parsed <= 0 ? 12 : Math.min(parsed, 12);
+          const currentMeridiem = getMeridiem(internalStateRef.current.hour);
+          updateDatePart(
+            "hour",
+            hourFrom12AndMeridiem(normalized12Hour, currentMeridiem ?? "AM"),
+          );
+        } else {
+          updateDatePart("hour", Math.min(parsed, 23));
+        }
       } else if (segmentType === "minute") {
         updateDatePart("minute", Math.min(parsed, 59));
       } else if (segmentType === "second") {
@@ -568,11 +696,66 @@ export function useTypedDate({
     }
   };
 
+  const isSegmentFilled = useCallback(
+    (segment: SegmentType) => {
+      if (segment === "meridiem") {
+        return state.hour !== null;
+      }
+      return getSegmentValue(segment) !== null;
+    },
+    [state.hour, getSegmentValue],
+  );
+
+  const validation = useMemo<TypedDateValidation>(() => {
+    const isEmpty =
+      buffer === "" && uniqueSegments.every((segment) => !isSegmentFilled(segment));
+    const isComplete =
+      buffer === "" && uniqueSegments.every((segment) => isSegmentFilled(segment));
+
+    return validateTypedDate({
+      year: state.year,
+      month: state.month,
+      day: state.day,
+      hour: state.hour,
+      minute: state.minute,
+      second: state.second,
+      hasTime,
+      isEmpty,
+      isComplete,
+      required,
+      minDate,
+      maxDate,
+    });
+  }, [
+    state,
+    hasTime,
+    buffer,
+    uniqueSegments,
+    required,
+    minDate,
+    maxDate,
+    isSegmentFilled,
+  ]);
+
+  useEffect(() => {
+    if (!onValidationChange) {
+      lastValidationCodeRef.current = validation.code;
+      return;
+    }
+
+    if (lastValidationCodeRef.current !== validation.code) {
+      onValidationChange(validation);
+      lastValidationCodeRef.current = validation.code;
+    }
+  }, [validation, onValidationChange]);
+
   return {
+    validation,
     inputProps: {
       ref: inputRef,
       type: "text",
       value: formattedValue,
+      "aria-invalid": validation.isValid ? undefined : true,
       onChange: handleChange,
       onKeyDown: handleKeyDown,
       onMouseUp: handleMouseUp,

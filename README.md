@@ -101,6 +101,13 @@ function DateTimeApp() {
         value={dateTime} 
         onChange={setDateTime}
       />
+
+      {/* 12-hour format with meridiem */}
+      <TypedDateInput
+        format="MM/DD/YYYY hh:mm A"
+        value={dateTime}
+        onChange={setDateTime}
+      />
     </div>
   );
 }
@@ -143,7 +150,7 @@ function CustomDateTimeInput() {
 2. Type numbers to replace the segment value
 3. Use arrow keys to navigate between segments (← →) 
 4. Use up/down arrows (↑ ↓) to increment/decrement values
-5. **Time segments**: Hours validate to 0-23, minutes and seconds to 0-59
+5. **Time segments**: Supports 24-hour (`HH`) and 12-hour (`hh A/a`) formats
 
 ## API Reference
 
@@ -152,17 +159,17 @@ function CustomDateTimeInput() {
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
 | `value` | `Date \| undefined` | `undefined` | Selected date value |
-| `onChange` | `(date: Date) => void` | `undefined` | Callback when date changes |
-| `format` | `string` | `MM/DD/YYYY` | Format using MM, DD, YYYY, HH, mm, ss with custom separators |
+| `onChange` | `(date?: Date) => void` | `undefined` | Callback when date changes |
+| `format` | `string` | `MM/DD/YYYY` | Format using MM, DD, YYYY, HH/hh, mm, ss, A/a with custom separators |
 | `className` | `string` | `undefined` | CSS class for styling |
 | `...props` | `InputHTMLAttributes<HTMLInputElement>` | | Any other valid input props except `type`, `onMouseUp`, `onKeyDown`, `ref`, `onBlur`, `onFocus` |
 
 ### useTypedDate Hook
 
 ```typescript
-function useDateField(options: {
+function useTypedDate(options: {
   value?: Date;
-  onChange?: (date: Date) => void;
+  onChange?: (date?: Date) => void;
   format?: string;
 }): {
   inputProps: {
@@ -191,8 +198,9 @@ The following features are planned for future releases:
 - **Date library integration**: Support for popular date libraries like date-fns, Day.js, and Moment.js
 - **Localization**: International date formats and localized month/day names
 - ~~**Time picker**: Add support for time input alongside date~~ ✅ **COMPLETED**
+- ~~**12-hour time format**: AM/PM support~~ ✅ **COMPLETED**
+- ~~**Validation API**: Explicit validation state + range checks~~ ✅ **COMPLETED**
 - **Range selection**: Allow selecting date ranges
-- **Validation**: Add date validation feedback
 
 ## License
 
