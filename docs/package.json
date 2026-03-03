@@ -25,7 +25,7 @@
     "react": "^19.0.0",
     "react-day-picker": "^9.5.1",
     "react-dom": "^19.0.0",
-    "react-typed-date": "file:..",
+    "react-typed-date": "^1.2.0",
     "tailwindcss": "^4.0.12"
   },
   "devDependencies": {
